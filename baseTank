@@ -25,18 +25,18 @@
 
 void pre_auton()
 {
-  // Set bStopTasksBetweenModes to false if you want to keep user created tasks
-  // running between Autonomous and Driver controlled modes. You will need to
-  // manage all user created tasks if set to false.
-  bStopTasksBetweenModes = true;
+	// Set bStopTasksBetweenModes to false if you want to keep user created tasks
+	// running between Autonomous and Driver controlled modes. You will need to
+	// manage all user created tasks if set to false.
+	bStopTasksBetweenModes = true;
 
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
 	// bDisplayCompetitionStatusOnLcd = false;
 
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+	// All activities that occur before the competition starts
+	// Example: clearing encoders, setting servo positions, ...
 }
 
 /*---------------------------------------------------------------------------*/
@@ -51,12 +51,12 @@ void pre_auton()
 
 task autonomous()
 {
-  // ..........................................................................
-  // Insert user code here.
-  // ..........................................................................
+	// ..........................................................................
+	// Insert user code here.
+	// ..........................................................................
 
-  // Remove this function call once you have "real" code.
-  AutonomousCodePlaceholderForTesting();
+	// Remove this function call once you have "real" code.
+	AutonomousCodePlaceholderForTesting();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -68,32 +68,83 @@ task autonomous()
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-
-task usercontrol()
+/*task lift()
 {
-  while (true)
-  {
-		int joystickL=0, joystickR=0, Tol=20;			//declare variables
-		//tolerance  bv, if analog stick is unalligned and slightly above zero motor wont run unless past the tolerance value
-		while(true)
+	while(1==1)
+	{
+		if(vexRT(Btn5U)==1)
 		{
+			startMotor(liftmo1,127);
+			startMotor(liftmo2,127);
+		}
+		if(vexRT(Btn6D)==1)
+		{
+			startMotor(liftmo1, -127);
+			startMotor(liftmo2, -127);
+		}
+		else
+		{
+			stopMotor(liftmo1);
+			stopMotor(liftmo2);
+		}
 
-			if (abs(vexRT[Ch3])>Tol)				// ensure that the analog stick is past the tolerence point
-				joystickL= vexRT[Ch3];
+	}*/
+	task Mgoal()
+	{
+		while(1==1)
+		{
+			if(vexRT(Btn5D)==1)
+			{
+				startMotor(Mgoal1, 127);
+				startMotor(Mgoal2, 127);
+			}
+			else if (vexRT(Btn6D)==1)
+			{
+				startMotor(Mgoal1,-127);
+				startMotor(Mgoal2,-127);
+			}
 			else
-				joystickL=0;
-			if(abs(vexRT[Ch2])>Tol)		// ensure that the analog stick is past the tolerence point
-				joystickR= vexRT[Ch2];
-			else											//to ensure that when the analog stick is not being used the motor do not run
-				joystickR=0;
-
-			motor[Rb1a3] = joystickR;
-			motor[Rb2]=joystickR;
-			motor[Lb2]=joystickL;
-			motor[Lb1a3]=joystickL;
+			{
+				stopMotor(Mgoal1);
+				stopMotor(Mgoal2);
+			}
 		}
 	}
+	/*task(claw)
+	{
+	//claw open
+	//claw close
+	}*/
+	task base ()
+	{
+		while (true)
+		{
+			int joystickL=0, joystickR=0, Tol=20;			//declare variables
+			//tolerance  bv, if analog stick is unalligned and slightly above zero motor wont run unless past the tolerance value
+			while(true)
+			{
 
-    UserControlCodePlaceholderForTesting();
-  }
-}
+				if (abs(vexRT[Ch3])>Tol)				// ensure that the analog stick is past the tolerence point
+					joystickL= vexRT[Ch3];
+				else
+					joystickL=0;
+				if(abs(vexRT[Ch2])>Tol)		// ensure that the analog stick is past the tolerence point
+					joystickR= vexRT[Ch2];
+				else											//to ensure that when the analog stick is not being used the motor do not run
+					joystickR=0;
+
+				motor[Rb1] = joystickR;
+				motor[Rb2]=joystickR;
+				motor[Lb2]=joystickL;
+				motor[Lb1]=joystickL;
+			}
+		}
+	}
+	task usercontrol()
+	{
+		startTask(Mgoal);
+		startTask(base);
+
+		UserControlCodePlaceholderForTesting();
+	}
+	//}
