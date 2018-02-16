@@ -1,0 +1,1656 @@
+#pragma config(Sensor, in1,    pot,            sensorAnalog)
+#pragma config(Sensor, dgtl1,  lquad,          sensorQuadEncoder)
+#pragma config(Sensor, dgtl3,  rquad,          sensorQuadEncoder)
+#pragma config(Sensor, dgtl5,  equad,          sensorQuadEncoder)
+#pragma config(Sensor, dgtl7,  aquad,          sensorQuadEncoder)
+#pragma config(Motor,  port1,           tlift,         tmotorVex393_HBridge, openLoop)
+#pragma config(Motor,  port2,           rf,            tmotorVex393HighSpeed_MC29, openLoop, reversed)
+#pragma config(Motor,  port3,           rb,            tmotorVex393HighSpeed_MC29, openLoop, reversed)
+#pragma config(Motor,  port4,           arm,           tmotorVex393TurboSpeed_MC29, openLoop)
+#pragma config(Motor,  port5,           mlift,         tmotorVex393_MC29, openLoop, reversed)
+#pragma config(Motor,  port6,           claw,          tmotorServoStandard, openLoop)
+#pragma config(Motor,  port7,           mg,            tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port8,           lb,            tmotorVex393HighSpeed_MC29, openLoop)
+#pragma config(Motor,  port9,           lf,            tmotorVex393HighSpeed_MC29, openLoop)
+#pragma config(Motor,  port10,          blift,         tmotorVex393_HBridge, openLoop)
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*        Description: Competition template for VEX EDR                      */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
+// This code is for the VEX cortex platform
+#pragma platform(VEX2)
+
+// Select Download method as "competition"
+#pragma competitionControl(Competition)
+
+//Main competition background code...do not modify!
+#include "Vex_Competition_Includes.c"
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the cortex has been powered on and    */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+void stackup (int count1, int count2, int count3)
+{
+
+	float myP = 0.5;  // Proportional:  increase if you have a robot with high interia.
+	float myI = 1;	// Integeral:
+
+	float error=0.0;
+	float motor_speed;
+	float sumI=0.0;		// Sum of the integeral error
+	int target = 700; //vertical
+
+
+	SensorValue[aquad] = 0; //Clear the encoders
+	motor[arm] = 0;
+
+	//error = target - abs(SensorValue[aquad]);
+
+	startMotor(tlift, -127);
+	startMotor(mlift, -127);
+	startMotor(blift, -127);
+
+	while (abs(SensorValue[equad])< count1 && vexRT[Btn8LXmtr2] == 0 && vexRT[Btn6DXmtr2] == 0)
+	{
+		/*error = target - abs(SensorValue[aquad]);
+
+		sumI = sumI + myI * error;
+		if (sumI > 15) sumI=15;
+		if (sumI < -15) sumI=-15;
+		motor_speed = (myP * error) + sumI;
+
+		motor[arm] = motor_speed;*/
+		startMotor(tlift, -127);
+		startMotor(mlift, -127);
+		startMotor(blift, -127);
+
+		EndTimeSlice();
+	}
+	while (abs(SensorValue[equad])< count2 && vexRT[Btn8LXmtr2] == 0 && vexRT[Btn6DXmtr2] == 0)
+	{
+		/*error = target - abs(SensorValue[aquad]);
+
+		sumI = sumI + myI * error;
+		if (sumI > 15) sumI=15;
+		if (sumI < -15) sumI=-15;
+		motor_speed = (myP * error) + sumI;
+
+		motor[arm] = motor_speed;*/
+		startMotor(tlift, -127);
+		startMotor(mlift, -127);
+		startMotor(blift, -127);
+		motor[arm] = 127;
+
+		EndTimeSlice();
+	}
+	while( abs(SensorValue[equad])< count3 && vexRT[Btn8LXmtr2] == 0 && vexRT[Btn6DXmtr2] == 0) // just for 1 second
+	{
+		motor[arm] = 100;
+
+		EndTimeSlice();
+	}
+	motor[arm] = 0;
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+
+}
+
+
+void stackdown (int target, int count)
+{
+	float myP = 1.2;  // Proportional:  increase if you have a robot with high interia.
+	float myI = 1;	// Integeral:
+
+	float error=0.0;
+	float motor_speed;
+	float sumI=0.0;		// Sum of the integeral error
+
+
+	//SensorValue[equad] = 0; //Clear the encoders
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+
+	error = target - abs(SensorValue[equad]);
+
+	if (abs(SensorValue[equad])< target)
+	{
+		setServo(claw,60); //90
+		wait(0.2);
+		motor[arm] = -80;
+
+		while (vexRT[Btn8LXmtr2] == 0 && time1[T1]<500)//0.5 sec
+		{
+			error = target - abs(SensorValue[equad]);
+
+			sumI = sumI + myI * error;
+			if (sumI > 30) sumI=30;
+			if (sumI < -30) sumI=-30;
+			motor_speed = (myP * error) + sumI;
+
+			motor[tlift] = -motor_speed;
+			motor[mlift] = -motor_speed;
+			motor[blift] = -motor_speed;
+
+			EndTimeSlice();
+		}
+
+		setServo(claw,60);//90
+		//	wait(1);
+
+		motor[arm] = -127;
+
+
+		while (abs(SensorValue[aquad])> 1000 && vexRT[Btn8LXmtr2] == 0) //until small endoder count
+		{
+			error = target - abs(SensorValue[equad]);
+
+			sumI = sumI + myI * error;
+			if (sumI > 40) sumI=40;
+			if (sumI < -40) sumI=-40;
+			motor_speed = (myP * error) + sumI;
+
+			motor[tlift] = -motor_speed;
+			motor[mlift] = -motor_speed;
+			motor[blift] = -motor_speed;
+			setServo(claw,30); //70
+			EndTimeSlice();
+		}
+
+		while( abs(SensorValue[aquad])> 750 && vexRT[Btn8LXmtr2] == 0) //until vertical
+		{
+			motor[arm] = -127;
+			motor[tlift] = 127;
+			motor[mlift] = 127;
+			motor[blift] = 127;
+			setServo(claw,20); //70
+			EndTimeSlice();
+		}
+		while( abs(SensorValue[equad])> count && vexRT[Btn8LXmtr2] == 0)
+		{
+			motor[arm] = 0;
+			motor[tlift] = 127;
+			motor[mlift] = 127;
+			motor[blift] = 127;
+			setServo(claw,20); //70
+			EndTimeSlice();
+		}
+		motor[arm] = 0;
+		motor[tlift] = 0;
+		motor[mlift] = 0;
+		motor[blift] = 0;
+		setServo(claw,50); //80
+		//	SensorValue[equad] = 0;
+
+	}
+	else
+	{
+
+		while( abs(SensorValue[aquad])> 1000 && vexRT[Btn8LXmtr2] == 0) //until small endoder count
+		{
+			setServo(claw, 60); //70
+			wait(0.2);
+			motor[arm] = -127;
+
+
+			EndTimeSlice();
+		}
+		while( abs(SensorValue[aquad])> 900 && vexRT[Btn8LXmtr2] == 0) //until small endoder count
+		{
+			motor[arm] = -127;
+			setServo(claw, 30);//70
+			EndTimeSlice();
+		}
+		while( abs(SensorValue[aquad])> 750 && vexRT[Btn8LXmtr2] == 0) //until vertical
+		{
+
+			motor[arm] = -127;
+			setServo(claw, 20);//70
+			motor[tlift] = 127;
+			motor[mlift] = 127;
+			motor[blift] = 127;
+			EndTimeSlice();
+		}
+		while( abs(SensorValue[equad])> count && vexRT[Btn8LXmtr2] == 0)
+		{
+			motor[arm] = 0;
+			motor[tlift] = 127;
+			motor[mlift] = 127;
+			motor[blift] = 127;
+			EndTimeSlice();
+		}
+		motor[arm] = 0;
+		motor[tlift] = 0;
+		motor[mlift] = 0;
+		motor[blift] = 0;
+		setServo(claw, 50); //80
+		//	SensorValue[equad] = 0;
+	}
+}
+
+void stackup1 (int count1, int count2)
+{
+	SensorValue[aquad] = 0; //Clear the encoders
+	while (abs(SensorValue[equad])< count1 && vexRT[Btn8LXmtr2] == 0)
+	{
+
+		startMotor(tlift, -127);
+		startMotor(mlift, -127);
+		startMotor(blift, -127);
+		motor[arm] = 127;
+		EndTimeSlice();
+	}
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+	//SensorValue[equad] = 0;
+
+	while (abs(SensorValue[aquad])< count2 && vexRT[Btn8LXmtr2] == 0)
+	{
+		motor[arm] = 127;
+
+		EndTimeSlice();
+	}
+	motor[arm] = 0;
+
+}
+
+
+
+task pinch()
+{
+	setServo(claw,-30);
+	while (1==1)
+	{
+		int v = motor(claw);
+		if (vexRT[Btn5UXmtr2] == 1)
+		{
+			if (v == -30)//0
+			{
+
+				setServo(claw,50); //80
+				wait (0.5);
+			}
+			else if (v == 50) //80
+			{
+				setServo(claw,-30); //0
+				wait (0.5);
+			}
+		}
+
+		EndTimeSlice();
+	}
+
+}
+
+
+
+task mobilegoal()
+{
+	while (1==1)
+	{
+		if(vexRT[Btn6U] == 1)
+		{
+			motor[mg] = 127;
+		}
+		else if(vexRT[Btn6D] == 1)
+		{
+			motor[mg] = -127;
+		}
+		else if (vexRT[Btn7U] == 1)
+		{
+			motor[mg] = -60;
+		}
+		else
+		{
+			motor[mg] = 0;
+		}
+
+		if(vexRT[Btn7L] == 1)
+		{
+			SensorValue[equad] = 0;
+
+		}
+		if(vexRT[Btn7R] == 1)
+		{
+			SensorValue[aquad] = 0;
+		}
+
+		EndTimeSlice();
+	}
+}
+
+
+
+
+void mobileintake (int inside, int t)  //picks up mobile goal
+{
+	while(SensorValue[pot] > inside && time1[T1] < t)
+	{
+		startMotor (mg,127);
+	}
+	startMotor (mg,-25);
+	wait1Msec(50);
+	stopMotor (mg);
+
+}
+
+void mobileouttake (int outside, int t)  //puts down mobile goal
+{
+	while(SensorValue[pot] < outside && time1[T1] < t)
+	{
+		startMotor (mg,-127);
+	}
+	startMotor (mg,25);
+	wait1Msec(50);
+	stopMotor (mg);
+}
+void straight (int count, int fast, int slow, int t)  //driving stright
+{
+	SensorValue[lquad] = 0;
+	SensorValue[rquad] = 0;
+
+
+	while((abs (SensorValue(lquad)) < count || abs (SensorValue(rquad)) < count) && time1[T1]< t)
+	{
+		if(abs (SensorValue(lquad)) == abs (SensorValue(rquad))) // If rightEncoder has counted the same amount as leftEncoder:
+		{
+			// Move Forward
+			motor[lf] = fast;
+			motor[rf]  = fast;
+			motor[lb] = fast;
+			motor[rb]  = fast;
+
+		}
+		else if(abs (SensorValue(lquad)) < abs (SensorValue(rquad)))	// If rightEncoder has counted more encoder counts
+		{
+			// Turn slightly right
+			motor[lf] = slow;
+			motor[rf]  = fast;
+			motor[lb] = slow;
+			motor[rb]  = fast;
+		}
+		else	// Only runs if leftEncoder has counted more encoder counts
+		{
+			// Turn slightly left
+			motor[lf] = fast;
+			motor[rf]  = slow;
+			motor[lb] = fast;
+			motor[rb]  = slow;
+		}
+	}
+
+	motor[lf] = 50;
+	motor[rf]  = 50;
+	motor[lb] = 50;
+	motor[rb]  = 50;
+	wait1Msec(50);
+	motor[lf] = 0;
+	motor[rf]  = 0;
+	motor[lb] = 0;
+	motor[rb]  = 0;
+}
+
+void back (int count, int fast, int slow, int t)  //driving backwards
+{
+	SensorValue[lquad] = 0;
+	SensorValue[rquad] = 0;
+
+
+	while((abs (SensorValue(rquad)) < count || abs (SensorValue(lquad)) < count) && time1[T1]< t)
+	{
+		if(abs (SensorValue(lquad)) == abs (SensorValue(rquad))) // If rightEncoder has counted the same amount as leftEncoder:
+		{
+			// Move Forward
+			motor[lf] = -fast;
+			motor[rf]  = -fast;
+			motor[lb] = -fast;
+			motor[rb]  = -fast;
+
+		}
+		else if(abs (SensorValue(lquad)) < abs (SensorValue(rquad)))	// If rightEncoder has counted more encoder counts
+		{
+			// Turn slightly right
+			motor[lf] = -slow;
+			motor[rf]  = -fast;
+			motor[lb] = -slow;
+			motor[rb]  = -fast;
+
+
+		}
+		else	// Only runs if leftEncoder has counted more encoder counts
+		{
+			// Turn slightly left
+			motor[lf] = -fast;
+			motor[rf]  = -slow;
+			motor[lb] = -fast;
+			motor[rb]  = -slow;
+
+
+		}
+	}
+
+	motor[lf] = -50;
+	motor[rf]  = -50;
+	motor[lb] = -50;
+	motor[rb]  = -50;
+	wait1Msec(50);
+	motor[lf] = 0;
+	motor[rf]  = 0;
+	motor[lb] = 0;
+	motor[rb]  = 0;
+}
+
+void turnR (int tcount, int tspeed, int t)  //turning right with mobile goal as front
+{
+	SensorValue[lquad] = 0;
+	SensorValue[rquad] = 0;
+
+	while((abs (SensorValue(rquad)) < tcount || abs (SensorValue(lquad)) < tcount) && time1[T1] < t)
+	{
+		motor[lf] = tspeed;
+		motor[rf] = -tspeed;
+		motor[lb] = tspeed;
+		motor[rb] = -tspeed;
+	}
+
+	motor[lf] = 50;
+	motor[rf]  = -50;
+	motor[lb] = 50;
+	motor[rb]  = -50;
+	wait1Msec(50);
+	motor[lf] = 0;
+	motor[rf]  = 0;
+	motor[lb] = 0;
+	motor[rb]  = 0;
+}
+void liftup (int tcount, int tspeed, int t)  //moves the lift up to choosen height
+{
+	SensorValue(equad)=0;
+
+	while(abs(SensorValue(equad))< tcount && time1[T1] < t)
+	{
+		motor[tlift] = -tspeed;
+		motor[mlift] = -tspeed;
+		motor[blift] = -tspeed;
+
+	}
+	motor[tlift] = -50;
+	motor[mlift]  = -50;
+	motor[blift] = -50;
+	wait1Msec(50);
+	motor[tlift] = 0;
+	motor[mlift]  = 0;
+	motor[blift]  = 0;
+
+}
+void liftdown (int tcount, int tspeed, int t)  //pulls the lift down to chosen height
+{
+	//SensorValue(equad)=200;
+
+	while(abs(SensorValue(equad))> tcount && time1[T1] < t)
+	{
+		motor[tlift] = tspeed;
+		motor[mlift] = tspeed;
+		motor[blift] = tspeed;
+
+	}
+	motor[tlift] = 50;
+	motor[mlift]  = 50;
+	motor[blift] = 50;
+	wait1Msec(50);
+	motor[tlift] = 0;
+	motor[mlift]  = 0;
+	motor[blift]  = 0;
+
+}
+void preloaddown (int tcount, int tspeed, int t)  //pulls the preload from being on the mobile goal side to behind robot
+{
+	//	SensorValue[aquad] = 1350;
+
+	while ((SensorValue (aquad)) > tcount &&time1[T1] < t)
+	{
+		motor[arm] = -tspeed;
+	}
+	motor[arm] = 50;
+	wait1Msec(50);
+	motor[arm] = 0;
+
+}
+
+void preloadup (int tcount, int tspeed, int t)  //places the preload onto the mobile goal
+{
+	//	SensorValue[aquad] = 1350;
+
+	while ((SensorValue (aquad)) < tcount &&time1[T1] < t)
+	{
+		motor[arm] = tspeed;
+	}
+	motor[arm] = -50;
+	wait1Msec(50);
+	motor[arm] = 0;
+
+	setServo(claw, 80);
+
+}
+void closeclaw(int claw, int t)  //close claw
+{
+	clearTimer(T1);
+	while( time1(T1) <t){
+		setServo (claw,0);
+	}
+}
+
+
+void turnL (int tcount, int tspeed, int t)  //turning left when mobile goal is at the front
+{
+	SensorValue[lquad] = 0;
+	SensorValue[rquad] = 0;
+
+	while((abs (SensorValue(rquad)) < tcount || abs (SensorValue(lquad)) < tcount) && time1[T1] < t)
+	{
+		motor[lf] = -tspeed;
+		motor[rf] = tspeed;
+		motor[lb] = -tspeed;
+		motor[rb] = tspeed;
+	}
+
+
+	motor[lf] = -50;
+	motor[rf]  = 50;
+	motor[lb] = -50;
+	motor[rb]  = 50;
+	wait1Msec(50);
+	motor[lf] = 0;
+	motor[rf]  = 0;
+	motor[lb] = 0;
+	motor[rb]  = 0;
+}
+void PIDturnL (int count, int power, int t)
+{
+	float myP = 0.1;
+	float myI = 1;
+	float error=0.0;
+	float sumI=0.0;
+
+
+	int motor_speed;
+
+	//Clear the encoders
+	SensorValue[rquad] = 0;
+	SensorValue[lquad] = 0;
+	motor[lf] = 0;
+	motor[rb] = 0;
+	motor[lb] = 0;
+	motor[rf] = 0;
+	error = count - abs(SensorValue[rquad]);
+
+	while (true && time1[T1]<t)
+	{
+		error = count - abs(SensorValue[rquad]);
+
+		sumI = sumI + myI * error;
+		if (sumI > power) sumI=power;
+		if (sumI < -power) sumI=-power;
+		motor_speed = (myP * error) + sumI;
+
+		motor[lf] = -motor_speed;
+		motor[lb] = -motor_speed;
+		motor[rf] = motor_speed;
+		motor[rb] = motor_speed;
+
+		EndTimeSlice();
+	}
+	stopMotor(lf);
+	stopMotor(lb);
+	stopMotor(rf);
+	stopMotor(rb);
+}
+
+void PIDturnR (int count, int power, int t)
+{
+	float myP = 0.1;
+	float myI = 1;
+	float error=0.0;
+	float sumI=0.0;
+
+
+	int motor_speed;
+
+	//Clear the encoders
+	SensorValue[rquad] = 0;
+	SensorValue[lquad] = 0;
+	motor[lf] = 0;
+	motor[rb] = 0;
+	motor[lb] = 0;
+	motor[rf] = 0;
+	error = count - abs(SensorValue[rquad]);
+
+	while (true && time1[T1]<t)
+	{
+		error = count - abs(SensorValue[rquad]);
+
+		sumI = sumI + myI * error;
+		if (sumI > power) sumI=power;
+		if (sumI < -power) sumI=-power;
+		motor_speed = (myP * error) + sumI;
+
+		motor[lf] = motor_speed;
+		motor[lb] = motor_speed;
+		motor[rf] = -motor_speed;
+		motor[rb] = -motor_speed;
+
+		EndTimeSlice();
+	}
+	stopMotor(lf);
+	stopMotor(lb);
+	stopMotor(rf);
+	stopMotor(rb);
+}
+void PIDback(int target, int t)
+{
+	float myP = 0.1;  // Proportional:  increase if you have a robot with high interia.
+	float myI = 1;	// Integeral:
+
+	float error=0.0;
+	float motor_speed;
+	float sumI=0.0;		// Sum of the integeral error
+	float myP1 = 0.1;  // Proportional:  increase if you have a robot with high interia.
+	float myI1 = 1;	// Integeral:
+
+	float error1=0.0;
+	float motor_speed1;
+	float sumI1=0.0;
+
+	//Clear the encoders
+	SensorValue[rquad] = 0;
+	SensorValue[lquad] = 0;
+	motor[lf]  = 0;
+	motor[lb] = 0;
+	motor[rf]  = 0;
+	motor[rb] = 0;
+
+	error = abs(SensorValue[lquad]) - target;
+	error1 = abs(SensorValue[rquad]) - target;
+	while (true && time1[T1]<t)
+	{
+		error1 = abs(SensorValue[rquad]) - target;
+
+		sumI1 = sumI1 + myI1 * error1;
+		if (sumI1 > 13) sumI1=13;
+		if (sumI1 < -13) sumI1=-13;
+		motor_speed1 = (myP1 * error1) + sumI1;
+
+		motor[rf] = motor_speed1;
+		motor[rb] = motor_speed1;
+		motor[lf] = motor_speed1;
+		motor[lb] = motor_speed1;
+		wait10Msec(1);
+	}
+
+	stopMotor(lf);
+	stopMotor(lb);
+	stopMotor(rf);
+	stopMotor(rb);
+
+}
+
+void PIDstraight(int target, int t)
+{
+	float myP = 0.1;  // Proportional:  increase if you have a robot with high interia.
+	float myI = 1;	// Integeral:
+
+	float error=0.0;
+	float motor_speed;
+	float sumI=0.0;		// Sum of the integeral error
+	float myP1 = 0.1;  // Proportional:  increase if you have a robot with high interia.
+	float myI1 = 1;	// Integeral:
+
+	float error1=0.0;
+	float motor_speed1;
+	float sumI1=0.0;
+
+	//Clear the encoders
+	SensorValue[rquad] = 0;
+	SensorValue[lquad] = 0;
+	motor[lf]  = 0;
+	motor[lb] = 0;
+	motor[rf]  = 0;
+	motor[rb] = 0;
+
+	error1 = abs(SensorValue[rquad]) - target;
+	while (true && time1[T1]<t)
+	{
+
+
+		error1 = abs(SensorValue[rquad]) - target;
+
+		sumI1 = sumI1 + myI1 * error1;
+		if (sumI1 > 13) sumI1=13;
+		if (sumI1 < -13) sumI1=-13;
+		motor_speed1 = (myP1 * error1) + sumI1;
+
+		motor[rf] = -motor_speed1;
+		motor[rb] = -motor_speed1;
+				motor[lf] = -motor_speed1;
+		motor[lb] = -motor_speed1;
+		wait10Msec(1);
+	}
+
+	stopMotor(lf);
+	stopMotor(lb);
+	stopMotor(rf);
+	stopMotor(rb);
+
+}
+
+void pre_auton()
+{
+
+	// Set bStopTasksBetweenModes to false if you want to keep user created tasks
+	// running between Autonomous and Driver controlled modes. You will need to
+	// manage all user created tasks if set to false.
+	bStopTasksBetweenModes = true;
+
+	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
+	// used by the competition include file, for example, you might want
+	// to display your team name on the LCD in this function.
+	// bDisplayCompetitionStatusOnLcd = false;
+
+	// All activities that occur before the competition starts
+	// Example: clearing encoders, setting servo positions, ...
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+task autonomous()
+{
+
+	// Programming Skills (Sam)
+
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	PIDstraight( 100, 1000);
+	clearTimer(T1);
+	preloaddown (-1320, 90, 1500);  //places the chain bar down
+	clearTimer(T1);
+	mobileouttake ( 1620, 2400);
+	clearTimer(T1);
+	PIDstraight ( 950, 2600);
+	clearTimer(T1);
+	straight( 40, 50, 30, 1000);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);     //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	wait(0.5);                   //places the cone on the mobile goal
+	clearTimer(T1);
+	//PIDturnR ( 730, 19, 2000);
+	clearTimer(T1);
+	PIDback (800, 2000);    // turn around and drive back toward scoring zone
+	clearTimer(T1);
+	PIDturnR  (360, 28, 1500);
+	clearTimer(T1);
+	PIDstraight ( 350, 1500);
+	clearTimer(T1);
+	PIDturnR ( 400, 28, 1500);  // facing twnety point zone
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;          // releases the cone and brings the chain bar back
+	motor[tlift] = -40;
+	motor[mlift] = -40;
+	motor[blift] = -40;
+	motor[mg]    = -35;
+	PIDstraight ( 100, 1000);  // brings lift up as it drives into the ten point zone
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+	motor[mg] =    0;
+	clearTimer(T1);
+	straight( 900, 127, 110, 3000);
+	clearTimer(T1);
+	PIDback ( 750, 3000);      // places mobile goal into the twenty point zone
+	clearTimer(T1);
+	liftdown ( 0, 80, 800);
+	PIDturnL (370, 24, 3000);
+	clearTimer(T1);
+	PIDstraight ( 560, 2000);
+	clearTimer(T1);
+	PIDturnL ( 320, 24, 2000);  // adjust and face secound mobile goal
+	clearTimer(T1);
+	mobileouttake( 1620, 2400);
+	clearTimer(T1);
+	PIDstraight ( 820, 2000);
+	clearTimer(T1);
+	straight ( 40, 50, 30, 1500);
+	clearTimer(T1);
+	mobileintake ( 210, 3000);  // pick up secound mobile goal
+	clearTimer(T1);
+	PIDturnR ( 660, 29, 3000);
+	clearTimer(T1);
+	PIDstraight (1240, 3000);
+	clearTimer(T1);
+	mobileouttake ( 1320, 2000);
+	clearTimer(T1);
+	PIDback ( 400, 2000);      // places secound mobile goal in the ten point zone
+	clearTimer(T1);
+	PIDturnL ( 720, 30, 3000);
+	clearTimer(T1);
+	mobileouttake ( 1620, 2000);
+	clearTimer(T1);
+	PIDstraight ( 1380, 3000);
+	clearTimer(T1);
+	straight ( 40, 50, 30, 150);
+	clearTimer(T1);
+	mobileintake ( 210, 3000);  // pick up third mobile goal
+	clearTimer(T1);
+	PIDstraight ( 1000, 4000);
+	clearTimer(T1);
+	PIDturnL ( 400, 29, 2000);
+	clearTimer(T1);
+	PIDstraight ( 400, 2000);
+	clearTimer(T1);
+	PIDturnR ( 370, 29, 2000); //faces secound twenty point zone
+	clearTimer(T1);
+	motor[tlift] = -40;
+	motor[mlift] = -40;
+	motor[blift] = -40;
+	motor[mg]    = -35;
+	PIDstraight ( 100, 1000);  // brings lift up as it drives into the ten point zone
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+	motor[mg]    = 0;
+	clearTimer(T1);
+	straight ( 750, 127, 110, 3000);
+	clearTimer(T1);
+	PIDback ( 650, 3000);    //dump third mobile goal into the twenty point zone
+	clearTimer(T1);
+	liftdown ( 0, 50, 80);
+	PIDturnL ( 390, 19, 2000);
+	clearTimer(T1);
+	straight ( 250, 127, 110, 2000);
+	clearTimer(T1);
+	turnL ( 390, 19, 3000);  // face forth mobile goal
+	clearTimer(T1);
+	mobileouttake ( 1320, 4000);
+	PIDstraight ( 400, 2000);
+	clearTimer(T1);
+	mobileintake ( 210, 2000);  // pick up forth mobile goal
+	clearTimer(T1);
+	turnL ( 650, 19, 3000);
+	clearTimer(T1);
+	PIDstraight ( 500, 2000);
+	clearTimer(T1);
+	PIDback ( 200, 2000);  //score forth mobile goal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//LEFT AUTON 22 point
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	PIDstraight (1620, 2400);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	wait(0.5);
+	clearTimer(T1);
+	PIDback(1600, 1800);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnR (590, 28, 1700);
+	clearTimer(T1);
+	PIDstraight(420, 1300);
+	clearTimer(T1);
+	PIDturnR (440, 28, 1700);   //turn to correctly face the twenty point zone5
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	motor[tlift] = -40;
+	motor[mlift] = -40;
+	motor[blift] = -40;
+	motor[mg] = -35;
+	PIDstraight ( 100, 1000);
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+	motor[mg] = 0;
+	clearTimer(T1);
+	straight (870, 127, 110, 1400);
+	clearTimer(T1);
+	PIDback (700, 1500);  //Tossed mobile Goal into twenty point zone
+	clearTimer(T1);
+	liftdown (0, 50, 800);    // Bring lift down to maintain correct center of gravity
+	PIDturnR (200, 23, 1000);
+	clearTimer(T1);
+	PIDstraight(130, 1000);
+
+
+	}
+
+	//RIGHT AUTON 22 point
+
+/*
+
+	{
+
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	clearTimer(T1);
+	PIDstraight(1600, 2500);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	clearTimer(T1);
+	wait(0.5);
+	PIDback(1660, 2500);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnL (520, 30, 2000);
+	clearTimer(T1);
+	PIDstraight(370, 1500);
+	clearTimer(T1);
+	PIDturnL (300, 30, 2000);   //turn to correctly face the twenty point zone5
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	motor[tlift] = -40;
+	motor[mlift] = -40;
+	motor[blift] = -40;
+	motor[mg] = -35;
+	PIDstraight ( 100, 1000);
+	motor[tlift] = 0;
+	motor[mlift] = 0;
+	motor[blift] = 0;
+	motor[mg] = 0;
+	clearTimer(T1);
+	straight (750, 127, 110, 1500);
+	clearTimer(T1);
+	PIDback (600, 2000);  //Tossed mobile Goal into twenty point zone
+	clearTimer(T1);
+	liftdown (0, 50, 800);    // Bring lift down to maintain correct center of gravity
+	PIDturnL (200, 30, 1200);
+	clearTimer(T1);
+	PIDstraight(130, 1200);
+
+}
+
+
+
+	//LEFT AUTON 10 points
+
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	PIDstraight (1630, 2500);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	clearTimer(T1);
+	PIDback(1600, 1800);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnL (500, 30, 3000);
+  //turn to correctly face the ten point zone5
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	PIDstraight ( 100, 1000);
+	clearTimer(T1);
+	PIDstraight (350, 2000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);
+	PIDback (500, 1500);  //Tossed mobile Goal into ten point zone
+	clearTimer(T1);
+	PIDturnR (450, 19, 1000);
+	clearTimer(T1);
+	PIDstraight(130, 1000);
+
+	}
+
+	//Right AUTON 10 points
+	/*
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	PIDstraight (1600, 2200);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	clearTimer(T1);
+	PIDback(1600, 1800);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnL (550, 20, 1700);
+	clearTimer(T1);
+	PIDstraight(90, 500);
+	clearTimer(T1);
+	PIDturnL (400, 20, 1700);   //turn to correctly face the twenty point zone5
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	PIDstraight ( 100, 1000);
+	clearTimer(T1);
+	PIDstraight (200, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);
+	PIDback (500, 1500);  //Tossed mobile Goal into twenty point zone
+	clearTimer(T1);
+	PIDturnL (200, 20, 1000);
+	clearTimer(T1);
+	PIDstraight(130, 1000);
+
+	}
+
+	//left 7 point autonomus
+
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	PIDstraight (1650, 2300);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	clearTimer(T1);
+	wait(0.5);
+	PIDback(1650, 1600);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnR (900, 19, 2000);
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	PIDstraight ( 100, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);
+	PIDback (200, 1000);  //Tossed mobile Goal into twenty point zone
+
+	/*
+	//right 7 point autonomus
+	{
+	clearTimer(T1);
+	setServo(claw, -30);
+	clearTimer(T1);
+	preloaddown ( -1320, 90, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);  //put mobile goal intake down
+	PIDstraight (1600, 2200);
+	clearTimer(T1);
+	motor[arm]= 127;
+	mobileintake (210, 3000);  //drive stright and pick up mobile goal
+	motor[arm]= 0;
+	clearTimer(T1);
+	PIDback(1600, 1800);	//driving backwards while slowing down so that the mobile goal doesn't fall
+	clearTimer(T1);
+	wait(0.10);
+	clearTimer(T1);
+	PIDturnL (850, 20, 2000);
+	clearTimer(T1);
+	setServo( claw, 55);
+	motor[arm]= -127;
+	PIDstraight ( 100, 1000);
+	clearTimer(T1);
+	mobileouttake (1620, 2000);
+	PIDback (200, 1000);  //Tossed mobile Goal into twenty point zone
+	}
+
+
+
+
+
+	// PARKING
+
+	/*clearTimer(T1);
+	mobileouttake (1620, 3000);
+	clearTimer(T1);
+	straight (1450, 127, 110, 5500);
+	clearTimer(T1);
+	mobileintake (210, 3000);*/
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+task drive()
+{
+	int threshold = 10;
+	while(1==1)
+	{
+
+		if (vexRT[Btn8R] == 1)
+		{
+			while(vexRT[Btn8L] == 0 && vexRT[Btn5U] == 0 && vexRT[Btn5D] == 0)
+			{
+
+				if(abs(vexRT[Ch3]) > threshold)
+				{
+					motor[lf]  = vexRT[Ch3];
+					motor[lb]  = vexRT[Ch3];
+
+				}
+				else
+				{
+					motor[lf]  = 0;
+					motor[lb]  = 0;
+				}
+
+				if(abs(vexRT[Ch2]) > threshold)
+				{
+					motor[rb] = vexRT[Ch2];
+					motor[rf] = vexRT[Ch2];
+				}
+				else
+				{
+					motor[rb] = 0;
+					motor[rf] = 0;
+				}
+				EndTimeSlice();
+			}
+		}
+
+		else	if (vexRT[Btn8L] == 1)
+		{
+			while(vexRT[Btn8R] == 0 && vexRT[Btn5U] == 0 && vexRT[Btn5D] == 0)
+			{
+
+				if(abs(vexRT[Ch3]) > threshold)
+				{
+					motor[rb]  = -vexRT[Ch3];
+					motor[rf]  = -vexRT[Ch3];
+
+				}
+				else
+				{
+					motor[rb]  = 0;
+					motor[rf]  = 0;
+				}
+
+				if(abs(vexRT[Ch2]) > threshold)
+				{
+					motor[lf] = -vexRT[Ch2];
+					motor[lb] = -vexRT[Ch2];
+				}
+				else
+				{
+					motor[lf] = 0;
+					motor[lb] = 0;
+				}
+				EndTimeSlice();
+			}
+		}
+		else	if (vexRT[Btn5U] == 1)
+		{
+			motor[lf]  = -30;
+			motor[lb]  = -30;
+			motor[rf]  = -30;
+			motor[rb]  = -30;
+		}
+		else	if (vexRT[Btn5D] == 1)
+		{
+			motor[lf]  = 30;
+			motor[lb]  = 30;
+			motor[rf]  = 30;
+			motor[rb]  = 30;
+		}
+		else
+		{
+
+			motor[lf]  = 0;
+			motor[lb]  = 0;
+			motor[rf]  = 0;
+			motor[rb]  = 0;
+		}
+	}
+}
+
+
+
+
+task usercontrol()
+{
+
+	startTask(drive);
+	startTask(mobilegoal);
+	startTask(pinch);
+	SensorValue[equad] = 0;
+	//SensorValue[aquad] = 0;
+	while(1 == 1)
+	{
+
+		if(vexRT[Btn7UXmtr2] == 1)
+		{
+
+			while (vexRT[Btn7RXmtr2] == 0 && vexRT[Btn7DXmtr2] == 0 && vexRT[Btn7LXmtr2] == 0 && vexRT[Btn8UXmtr2] == 0 && vexRT[Btn8DXmtr2] == 0 && vexRT[Btn8RXmtr2]==0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					while (abs(SensorValue[aquad])< 800 && vexRT[Btn8LXmtr2] == 0)
+					{
+						motor[arm] = 127;
+					}
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					setServo(claw,30); //70
+					while (abs(SensorValue[aquad])> 700 && vexRT[Btn8LXmtr2] == 0)
+					{
+						motor[arm] = -127;
+					}
+					motor[arm] = 0;
+					setServo(claw,50); //80
+				}
+				else
+				{
+					motor[arm] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+
+		else	if(vexRT[Btn7RXmtr2] == 1)
+		{
+			while (vexRT[Btn7UXmtr2] == 0 && vexRT[Btn7DXmtr2] == 0 && vexRT[Btn7LXmtr2] == 0 && vexRT[Btn8UXmtr2] == 0 && vexRT[Btn8DXmtr2] == 0 && vexRT[Btn8RXmtr2]==0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					stackup1(200, 800);
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					clearTimer(T1);
+					stackdown(150, 0);
+				}
+				else
+				{
+					motor[arm] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+		else	if(vexRT[Btn7DXmtr2] == 1)
+		{
+			while (vexRT[Btn7RXmtr2] == 0 && vexRT[Btn7UXmtr2] == 0 && vexRT[Btn7LXmtr2] == 0 && vexRT[Btn8UXmtr2] == 0 && vexRT[Btn8DXmtr2] == 0 && vexRT[Btn8RXmtr2]==0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					stackup(250, 550, 650);
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					clearTimer(T1);
+					stackdown(600, 0);
+				}
+				else
+				{
+					motor[arm] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+		else if(vexRT[Btn7LXmtr2] == 1)
+		{
+			while (vexRT[Btn7RXmtr2] == 0 && vexRT[Btn7DXmtr2] == 0 && vexRT[Btn7UXmtr2] == 0 && vexRT[Btn8UXmtr2] == 0 && vexRT[Btn8DXmtr2] == 0 && vexRT[Btn8RXmtr2]==0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					stackup(600, 900, 930);
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					clearTimer(T1);
+					stackdown(940, 0);
+				}
+				else
+				{
+					motor[arm] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+
+
+
+		else if(vexRT[Btn8RXmtr2] == 1)
+		{
+			float myP = 1.2;  // Proportional:  increase if you have a robot with high interia.
+			float myI = 1;	// Integeral:
+
+			float error=0.0;
+			float motor_speed;
+			float sumI=0.0;		// Sum of the integeral error
+			int target = 500; //510
+
+			//Clear the encoders
+			//SensorValue[aquad] = 0;
+			motor[tlift] = 0;
+			motor[mlift] = 0;
+			motor[blift] = 0;
+
+
+			error = abs(SensorValue[equad]) - target;
+			while (vexRT(Btn8LXmtr2) == 0)
+			{
+				error = abs(SensorValue[equad]) - target;
+
+				sumI = sumI + myI * error;
+				if (sumI > 30) sumI=30;
+				if (sumI < -30) sumI=-30;
+				motor_speed = (myP * error) + sumI;
+
+				motor[tlift] = motor_speed;
+				motor[mlift] = motor_speed;
+				motor[blift] = motor_speed;
+
+				EndTimeSlice();
+			}
+			motor[tlift] = 0;
+			motor[mlift] = 0;
+			motor[blift] = 0;
+		}
+
+
+		else if(vexRT[Btn8DXmtr2] == 1)
+		{
+			while (vexRT[Btn7RXmtr2] == 0 && vexRT[Btn7DXmtr2] == 0 && vexRT[Btn7LXmtr2] == 0 && vexRT[Btn8UXmtr2] == 0 && vexRT[Btn7UXmtr2] == 0 && vexRT[Btn8RXmtr2] == 0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					stackup1(480, 800);//510
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					clearTimer(T1);
+					stackdown(750, 700);
+
+					float myP = 1.2;  // Proportional:  increase if you have a robot with high interia.
+					float myI = 1;	// Integeral:
+
+					float error=0.0;
+					float motor_speed;
+					float sumI=0.0;		// Sum of the integeral error
+					int target = 700;
+
+					//Clear the encoders
+					//SensorValue[aquad] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+					clearTimer(T1);
+
+					error = abs(SensorValue[equad]) - target;
+					while (vexRT(Btn8LXmtr2) == 0 && time1[T1]<500)
+					{
+						error = abs(SensorValue[equad]) - target;
+
+						sumI = sumI + myI * error;
+						if (sumI > 30) sumI=30;
+						if (sumI < -30) sumI=-30;
+						motor_speed = (myP * error) + sumI;
+
+						motor[tlift] = motor_speed;
+						motor[mlift] = motor_speed;
+						motor[blift] = motor_speed;
+
+						EndTimeSlice();
+					}
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+					target = 480;//510
+
+					//Clear the encoders
+					//SensorValue[aquad] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+
+					error = abs(SensorValue[equad]) - target;
+					while (vexRT(Btn8LXmtr2) == 0)
+					{
+						error = abs(SensorValue[equad]) - target;
+
+						sumI = sumI + myI * error;
+						if (sumI > 30) sumI=30;
+						if (sumI < -30) sumI=-30;
+						motor_speed = (myP * error) + sumI;
+
+						motor[tlift] = motor_speed;
+						motor[mlift] = motor_speed;
+						motor[blift] = motor_speed;
+
+						EndTimeSlice();
+					}
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+				}
+				else
+				{
+					motor[arm] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+
+		else if(vexRT[Btn8UXmtr2] == 1)
+		{
+			while (vexRT[Btn7RXmtr2]==0 && vexRT[Btn7DXmtr2]==0 && vexRT[Btn7LXmtr2]==0 && vexRT[Btn7UXmtr2]==0 && vexRT[Btn8DXmtr2]==0 && vexRT[Btn8RXmtr2]==0 && vexRT[Btn5DXmtr2]==0 && vexRT[Btn8D]==0 && vexRT[Btn8U]==0)
+			{
+				if(vexRT[Btn6UXmtr2] == 1)
+				{
+					stackup(600, 900, 950);
+				}
+				else if(vexRT[Btn6DXmtr2] == 1)
+				{
+					clearTimer(T1);
+					stackdown(940, 700);
+					float myP = 1.2;  // Proportional:  increase if you have a robot with high interia.
+					float myI = 1;	// Integeral:
+
+					float error=0.0;
+					float motor_speed;
+					float sumI=0.0;		// Sum of the integeral error
+					int target = 700;
+
+					//Clear the encoders
+					//SensorValue[aquad] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+					clearTimer(T1);
+
+
+					error = abs(SensorValue[equad]) - target;
+					while (vexRT(Btn8LXmtr2) == 0 && time1[T1]<500)
+					{
+						error = abs(SensorValue[equad]) - target;
+
+						sumI = sumI + myI * error;
+						if (sumI > 30) sumI=30;
+						if (sumI < -30) sumI=-30;
+						motor_speed = (myP * error) + sumI;
+
+						motor[tlift] = motor_speed;
+						motor[mlift] = motor_speed;
+						motor[blift] = motor_speed;
+
+						EndTimeSlice();
+					}
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+					target = 480;//510
+
+					//Clear the encoders
+					//SensorValue[aquad] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+
+					error = abs(SensorValue[equad]) - target;
+					while (vexRT(Btn8LXmtr2) == 0)
+					{
+						error = abs(SensorValue[equad]) - target;
+
+						sumI = sumI + myI * error;
+						if (sumI > 30) sumI=30;
+						if (sumI < -30) sumI=-30;
+						motor_speed = (myP * error) + sumI;
+
+						motor[tlift] = motor_speed;
+						motor[mlift] = motor_speed;
+						motor[blift] = motor_speed;
+
+						EndTimeSlice();
+					}
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+				}
+				else
+				{
+					motor[arm] = 0;
+					motor[tlift] = 0;
+					motor[mlift] = 0;
+					motor[blift] = 0;
+
+				}
+				EndTimeSlice();
+			}
+		}
+
+
+		else if(vexRT[Btn5DXmtr2] == 1)
+		{
+			motor[tlift] = 127;
+			motor[mlift] = 127;
+			motor[blift] = 127;
+		}
+
+		else if(vexRT[Btn8U] == 1)
+		{
+			motor[arm] = 127;
+
+
+		}
+		else if(vexRT[Btn8D] == 1)
+		{
+			motor[arm] = -127;
+
+		}
+
+		else
+		{
+			motor[arm] = 0;
+
+
+			motor[tlift] = 0;
+			motor[mlift] = 0;
+			motor[blift] = 0;
+		}
+
+
+		EndTimeSlice();
+	}
+
+
+}
